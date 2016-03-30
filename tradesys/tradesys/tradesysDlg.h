@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "config.h"
+#include "afxsock.h"
 
 // CtradesysDlg 对话框
 class CtradesysDlg : public CDialogEx
@@ -17,9 +19,8 @@ public:
 	enum { IDD = IDD_TRADESYS_DIALOG };
 #endif
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
-
 
 // 实现
 protected:
@@ -30,4 +31,23 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+
+private:
+	BOOL m_sysenable;
+	CString m_ipdaddress;
+	CString m_ipsaddress;
+	char m_buff[BUFFSIZE];
+	SOCKET m_udpsocket;
+	SOCKADDR_IN m_socketaddr;
+	int initudpsocket();
+	int closeudpsocket();
+	int udpsendto(char* v_char, int v_len);
+	int udprecvfrom();
+	int rxbuffok();
+	CString chars2cstring(char v_buff[BUFFSIZE]);
+	int cstring2chars(CString v_cstring);
+
+public:
+	afx_msg void OnBnClickedsysenable();
+
 };
