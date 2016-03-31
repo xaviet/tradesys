@@ -42,11 +42,15 @@ private:
 	SOCKADDR_IN m_socketaddr;
 	int initudpsocket();
 	int closeudpsocket();
-	int udpsendto(char* v_char, int v_len);
+	int udpsendto(CString v_cs);
 	CString udprecvfrom();
 	int rxbuffok();
 	CString chars2cstring(char v_buff[BUFFSIZE]);
 	int cstring2chars(CString v_cstring);
+	int infosysrun();
+	int m_listcount;
+	int msg2list(CString v_cstring);
+	CString m_rxbuff;
 
 public:
 	afx_msg void OnBnClickedsysenable();
@@ -54,8 +58,11 @@ public:
 protected:
 	afx_msg LRESULT OnSysenable(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnSysdisable(WPARAM wParam, LPARAM lParam);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+
 public:
 	CListCtrl m_msglist;
 	CString m_status;
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	CString m_msgcount;
 };

@@ -1,5 +1,5 @@
-
-// tradesysDlg.cpp : ÊµÏÖÎÄ¼ş
+ï»¿
+// tradesysDlg.cpp : å®ç°æ–‡ä»¶
 //
 
 #include "stdafx.h"
@@ -11,7 +11,7 @@
 #define new DEBUG_NEW
 #endif
 
-// CtradesysDlg ¶Ô»°¿ò
+// CtradesysDlg å¯¹è¯æ¡†
 
 CtradesysDlg::CtradesysDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_TRADESYS_DIALOG, pParent)
@@ -20,6 +20,8 @@ CtradesysDlg::CtradesysDlg(CWnd* pParent /*=NULL*/)
 	, m_ipdaddress(_T(""))
 	, m_sysenable(FALSE)
 	, m_status(_T(""))
+	, m_listcount(0)
+	, m_msgcount(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -35,10 +37,12 @@ void CtradesysDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_msglist, m_msglist);
 	DDX_Text(pDX, IDC_status, m_status);
 	DDV_MaxChars(pDX, m_status, 32);
+	DDX_Text(pDX, IDC_msgcount, m_msgcount);
 }
 
 BEGIN_MESSAGE_MAP(CtradesysDlg, CDialogEx)
 	ON_WM_PAINT()
+	ON_WM_TIMER()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_sysenable, &CtradesysDlg::OnBnClickedsysenable)
 	ON_MESSAGE(WM_sysenable, &CtradesysDlg::OnSysenable)
@@ -46,18 +50,18 @@ BEGIN_MESSAGE_MAP(CtradesysDlg, CDialogEx)
 	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
-// CtradesysDlg ÏûÏ¢´¦Àí³ÌĞò
+// CtradesysDlg æ¶ˆæ¯å¤„ç†ç¨‹åº
 
 BOOL CtradesysDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	// ÉèÖÃ´Ë¶Ô»°¿òµÄÍ¼±ê¡£  µ±Ó¦ÓÃ³ÌĞòÖ÷´°¿Ú²»ÊÇ¶Ô»°¿òÊ±£¬¿ò¼Ü½«×Ô¶¯
-	//  Ö´ĞĞ´Ë²Ù×÷
-	SetIcon(m_hIcon, TRUE);			// ÉèÖÃ´óÍ¼±ê
-	SetIcon(m_hIcon, FALSE);		// ÉèÖÃĞ¡Í¼±ê
+	// è®¾ç½®æ­¤å¯¹è¯æ¡†çš„å›¾æ ‡ã€‚  å½“åº”ç”¨ç¨‹åºä¸»çª—å£ä¸æ˜¯å¯¹è¯æ¡†æ—¶ï¼Œæ¡†æ¶å°†è‡ªåŠ¨
+	//  æ‰§è¡Œæ­¤æ“ä½œ
+	SetIcon(m_hIcon, TRUE);			// è®¾ç½®å¤§å›¾æ ‡
+	SetIcon(m_hIcon, FALSE);		// è®¾ç½®å°å›¾æ ‡
 
-	// TODO: ÔÚ´ËÌí¼Ó¶îÍâµÄ³õÊ¼»¯´úÂë
+	// TODO: åœ¨æ­¤æ·»åŠ é¢å¤–çš„åˆå§‹åŒ–ä»£ç 
 	m_ipsaddress = _T("192.168.255.1");
 	m_ipdaddress = _T("192.168.255.128");
 	UpdateData(FALSE);
@@ -67,23 +71,25 @@ BOOL CtradesysDlg::OnInitDialog()
 	m_msglist.InsertColumn(2, _T("value"), LVCFMT_LEFT, LIST2WIDTH);
 	m_msglist.InsertColumn(3, _T("volume"), LVCFMT_LEFT, LIST3WIDTH);
 	m_msglist.InsertColumn(4, _T("status"), LVCFMT_LEFT, LIST4WIDTH);
+	SetTimer(TIMER1S, 1000, NULL);
+	SetTimer(TIMER50MS, 50, NULL);
 
-	return TRUE;  // ³ı·Ç½«½¹µãÉèÖÃµ½¿Ø¼ş£¬·ñÔò·µ»Ø TRUE
+	return TRUE;  // é™¤éå°†ç„¦ç‚¹è®¾ç½®åˆ°æ§ä»¶ï¼Œå¦åˆ™è¿”å› TRUE
 }
 
-// Èç¹ûÏò¶Ô»°¿òÌí¼Ó×îĞ¡»¯°´Å¥£¬ÔòĞèÒªÏÂÃæµÄ´úÂë
-//  À´»æÖÆ¸ÃÍ¼±ê¡£  ¶ÔÓÚÊ¹ÓÃÎÄµµ/ÊÓÍ¼Ä£ĞÍµÄ MFC Ó¦ÓÃ³ÌĞò£¬
-//  Õâ½«ÓÉ¿ò¼Ü×Ô¶¯Íê³É¡£
+// å¦‚æœå‘å¯¹è¯æ¡†æ·»åŠ æœ€å°åŒ–æŒ‰é’®ï¼Œåˆ™éœ€è¦ä¸‹é¢çš„ä»£ç 
+//  æ¥ç»˜åˆ¶è¯¥å›¾æ ‡ã€‚  å¯¹äºä½¿ç”¨æ–‡æ¡£/è§†å›¾æ¨¡å‹çš„ MFC åº”ç”¨ç¨‹åºï¼Œ
+//  è¿™å°†ç”±æ¡†æ¶è‡ªåŠ¨å®Œæˆã€‚
 
 void CtradesysDlg::OnPaint()
 {
 	if (IsIconic())
 	{
-		CPaintDC dc(this); // ÓÃÓÚ»æÖÆµÄÉè±¸ÉÏÏÂÎÄ
+		CPaintDC dc(this); // ç”¨äºç»˜åˆ¶çš„è®¾å¤‡ä¸Šä¸‹æ–‡
 
 		SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
 
-		// Ê¹Í¼±êÔÚ¹¤×÷Çø¾ØĞÎÖĞ¾ÓÖĞ
+		// ä½¿å›¾æ ‡åœ¨å·¥ä½œåŒºçŸ©å½¢ä¸­å±…ä¸­
 		int cxIcon = GetSystemMetrics(SM_CXICON);
 		int cyIcon = GetSystemMetrics(SM_CYICON);
 		CRect rect;
@@ -91,7 +97,7 @@ void CtradesysDlg::OnPaint()
 		int x = (rect.Width() - cxIcon + 1) / 2;
 		int y = (rect.Height() - cyIcon + 1) / 2;
 
-		// »æÖÆÍ¼±ê
+		// ç»˜åˆ¶å›¾æ ‡
 		dc.DrawIcon(x, y, m_hIcon);
 	}
 	else
@@ -100,8 +106,8 @@ void CtradesysDlg::OnPaint()
 	}
 }
 
-//µ±ÓÃ»§ÍÏ¶¯×îĞ¡»¯´°¿ÚÊ±ÏµÍ³µ÷ÓÃ´Ëº¯ÊıÈ¡µÃ¹â±ê
-//ÏÔÊ¾¡£
+//å½“ç”¨æˆ·æ‹–åŠ¨æœ€å°åŒ–çª—å£æ—¶ç³»ç»Ÿè°ƒç”¨æ­¤å‡½æ•°å–å¾—å…‰æ ‡
+//æ˜¾ç¤ºã€‚
 HCURSOR CtradesysDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
@@ -114,7 +120,7 @@ int CtradesysDlg::initudpsocket()
 		AfxMessageBox(_T("AfxSocketInit fail"));
 		return FALSE;
 	}
-	// ³õÊ¼»¯udp
+	// åˆå§‹åŒ–udp
 	m_udpsocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (INVALID_SOCKET == m_udpsocket)
 	{
@@ -145,9 +151,10 @@ int CtradesysDlg::closeudpsocket()
 	return 0;
 }
 
-int CtradesysDlg::udpsendto(char* v_char,int v_len)
+int CtradesysDlg::udpsendto(CString v_cs)
 {
-	sendto(m_udpsocket, v_char, v_len, 0, (SOCKADDR*)&m_socketaddr, sizeof(SOCKADDR));
+	cstring2chars(v_cs);
+	sendto(m_udpsocket, m_buff, strlen(m_buff), 0, (SOCKADDR*)&m_socketaddr, sizeof(SOCKADDR));
 	memset(m_buff,0, BUFFSIZE);
 	return 0;
 }
@@ -173,18 +180,18 @@ CString CtradesysDlg::udprecvfrom()
 
 int CtradesysDlg::rxbuffok()
 {
-	// select ²ÎÊı
+	// select å‚æ•°
 	int t_iRet = 0;
 	int t_ifds = 0;
 	fd_set t_readfds;
 	fd_set FAR *t_pwritefds = NULL;
 	fd_set FAR *t_pexceptfds = NULL;
 	struct timeval t_timeout;
-	// ³¬Ê±Ê±¼ä1ºÁÃë
+	// è¶…æ—¶æ—¶é—´1æ¯«ç§’
 	t_timeout.tv_sec = 0;
 	t_timeout.tv_usec = 1000;
 	t_readfds.fd_count = 1;
-	t_readfds.fd_array[0] = m_udpsocket;  //SOCKET¾ä±ú
+	t_readfds.fd_array[0] = m_udpsocket;  //SOCKETå¥æŸ„
 	t_iRet = select(t_ifds, &t_readfds, t_pwritefds, t_pexceptfds, &t_timeout);
 	return t_iRet;
 }
@@ -203,7 +210,7 @@ int CtradesysDlg::cstring2chars(CString v_cstring)
 
 void CtradesysDlg::OnBnClickedsysenable()
 {
-	// TODO: ÔÚ´ËÌí¼Ó¿Ø¼şÍ¨Öª´¦Àí³ÌĞò´úÂë
+	// TODO: åœ¨æ­¤æ·»åŠ æ§ä»¶é€šçŸ¥å¤„ç†ç¨‹åºä»£ç 
 	UpdateData(TRUE);
 	if (m_sysenable)
 	{
@@ -211,9 +218,7 @@ void CtradesysDlg::OnBnClickedsysenable()
 		{
 			m_sysenable = FALSE;
 			UpdateData(FALSE);
-			closeudpsocket();
 		}
-		PostMessage(WM_sysenable, 0, 0);
 	}
 	else
 	{
@@ -221,15 +226,40 @@ void CtradesysDlg::OnBnClickedsysenable()
 	}
 }
 
+int CtradesysDlg::msg2list(CString v_cstring)
+{
+	CString t_cs= v_cstring;
+	while (t_cs.GetLength()>0)
+	{
+		CString t_tempcs = t_cs.Left(t_cs.Find(_T(',')));
+		m_msglist.InsertItem(0, t_tempcs.Right(t_tempcs.GetLength()-1));
+		t_cs = t_cs.Right(t_cs.GetLength()- t_tempcs.GetLength() -1);
+		t_tempcs = t_cs.Left(t_cs.Find(_T(',')));
+		m_msglist.SetItemText(0, 1, t_tempcs);
+		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
+		t_tempcs = t_cs.Left(t_cs.Find(_T(',')));
+		m_msglist.SetItemText(0, 2, t_tempcs);
+		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
+		t_tempcs = t_cs.Left(t_cs.Find(_T(']')));
+		m_msglist.SetItemText(0, 3, t_tempcs);
+		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
+		m_listcount++;
+	}
+	m_msgcount.Format(_T("%d"), m_listcount);
+	UpdateData(FALSE);
+	return 0;
+}
+
 afx_msg LRESULT CtradesysDlg::OnSysenable(WPARAM wParam, LPARAM lParam)
 {
-	//AfxMessageBox(_T("OnSysenable"));
-	CString t_cs = udprecvfrom();
-	if (t_cs.GetLength()>0)
+	// messageformat[code,price,volume,successflag]
+	//udpsendto(_T("[55555,22.333/4444.22,666666,7777777][2,5.1/9.27,6,0][600066,9.07/9.27,200,0]"));
+	m_rxbuff = udprecvfrom();
+	if (m_rxbuff.GetLength()>0 && m_rxbuff[m_rxbuff.GetLength()-1]==_T(']'))
 	{
-
+		msg2list(m_rxbuff);
+		m_rxbuff.Empty();
 	}
-	PostMessage(WM_sysenable, 0, 0);
 	return 0;
 }
 
@@ -242,15 +272,7 @@ afx_msg LRESULT CtradesysDlg::OnSysdisable(WPARAM wParam, LPARAM lParam)
 
 void CtradesysDlg::OnMouseMove(UINT nFlags, CPoint point)
 {
-	for (int t_i = 0; t_i<100; t_i++)
-	{
-		m_msglist.InsertItem(t_i, _T("0"));
-		m_msglist.SetItemText(t_i,1,_T("1"));
-		m_msglist.SetItemText(t_i,2,  _T("2"));
-		m_msglist.SetItemText(t_i, 3,_T("3"));
-		m_msglist.SetItemText(1, 1, _T("411111111111111"));
-	}
-	// TODO: ÔÚ´ËÌí¼ÓÏûÏ¢´¦Àí³ÌĞò´úÂëºÍ/»òµ÷ÓÃÄ¬ÈÏÖµ
+	// TODO: åœ¨æ­¤æ·»åŠ æ¶ˆæ¯å¤„ç†ç¨‹åºä»£ç å’Œ/æˆ–è°ƒç”¨é»˜è®¤å€¼
 	UpdateData(TRUE);
 	CPoint t_opt;
 	GetCursorPos(&t_opt);
@@ -259,4 +281,31 @@ void CtradesysDlg::OnMouseMove(UINT nFlags, CPoint point)
 	m_status = t_cs;
 	UpdateData(FALSE);
 	CDialogEx::OnMouseMove(nFlags, point);
+}
+
+void CtradesysDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: Ã”ÃšÂ´Ã‹ÃŒÃ­Â¼Ã“ÃÃ»ÃÂ¢Â´Â¦Ã€Ã­Â³ÃŒÃÃ²Â´ÃºÃ‚Ã«ÂºÃ/Â»Ã²ÂµÃ·Ã“ÃƒÃ„Â¬ÃˆÃÃ–Âµ
+	switch (nIDEvent)
+	{
+	case TIMER1S:
+		//infosysrun();	
+		break;
+	case TIMER50MS:
+		infosysrun();
+		break;
+	default:
+		break;
+	}
+	CDialogEx::OnTimer(nIDEvent);
+}
+
+int CtradesysDlg::infosysrun()
+{
+	UpdateData(TRUE);
+	if (m_sysenable)
+	{
+		PostMessage(WM_sysenable, 0, 0);
+	}
+	return 0;
 }
