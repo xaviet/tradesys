@@ -19,6 +19,7 @@ CtradesysDlg::CtradesysDlg(CWnd* pParent /*=NULL*/)
 	, m_ipsaddress(_T(""))
 	, m_ipdaddress(_T(""))
 	, m_sysenable(FALSE)
+	, m_status(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -26,17 +27,23 @@ CtradesysDlg::CtradesysDlg(CWnd* pParent /*=NULL*/)
 void CtradesysDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Text(pDX, IDC_ipaddress, m_ipsaddress);
+	DDX_Text(pDX, IDC_ipsaddress, m_ipsaddress);
 	DDV_MaxChars(pDX, m_ipsaddress, 32);
 	DDX_Check(pDX, IDC_sysenable, m_sysenable);
 	DDX_Text(pDX, IDC_ipdaddress, m_ipdaddress);
 	DDV_MaxChars(pDX, m_ipdaddress, 32);
+	DDX_Control(pDX, IDC_msglist, m_msglist);
+	DDX_Text(pDX, IDC_status, m_status);
+	DDV_MaxChars(pDX, m_status, 32);
 }
 
 BEGIN_MESSAGE_MAP(CtradesysDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_sysenable, &CtradesysDlg::OnBnClickedsysenable)
+	ON_MESSAGE(WM_sysenable, &CtradesysDlg::OnSysenable)
+	ON_MESSAGE(WM_sysdisable, &CtradesysDlg::OnSysdisable)
+	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 // CtradesysDlg 消息处理程序
@@ -54,6 +61,12 @@ BOOL CtradesysDlg::OnInitDialog()
 	m_ipsaddress = _T("192.168.255.1");
 	m_ipdaddress = _T("192.168.255.128");
 	UpdateData(FALSE);
+	memset(m_buff, 0, BUFFSIZE);
+	m_msglist.SetExtendedStyle((m_msglist.GetExtendedStyle()) | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	m_msglist.InsertColumn(1, _T("code"), LVCFMT_LEFT, LIST1WIDTH);
+	m_msglist.InsertColumn(2, _T("value"), LVCFMT_LEFT, LIST2WIDTH);
+	m_msglist.InsertColumn(3, _T("volume"), LVCFMT_LEFT, LIST3WIDTH);
+	m_msglist.InsertColumn(4, _T("status"), LVCFMT_LEFT, LIST4WIDTH);
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -112,7 +125,7 @@ int CtradesysDlg::initudpsocket()
 	m_socketaddr.sin_port = htons(UDPPORT);
 	// source ip
 	cstring2chars(m_ipsaddress);
-	m_socketaddr.sin_addr.s_addr = inet_addr(m_buff);
+	inet_pton(AF_INET, m_buff, &(m_socketaddr.sin_addr.s_addr));
 	if (SOCKET_ERROR == bind(m_udpsocket, (SOCKADDR*)&m_socketaddr, sizeof(SOCKADDR)))
 	{
 		AfxMessageBox(_T("udp socket bind fail"));
@@ -120,7 +133,8 @@ int CtradesysDlg::initudpsocket()
 	}
 	// destination ip
 	cstring2chars(m_ipdaddress);
-	m_socketaddr.sin_addr.s_addr = inet_addr(m_buff);
+	//m_socketaddr.sin_addr.s_addr = inet_addr(m_buff);
+	inet_pton(AF_INET, m_buff, &(m_socketaddr.sin_addr.s_addr));
 	return TRUE;
 }
 
@@ -135,11 +149,12 @@ int CtradesysDlg::udpsendto(char* v_char,int v_len)
 {
 	sendto(m_udpsocket, v_char, v_len, 0, (SOCKADDR*)&m_socketaddr, sizeof(SOCKADDR));
 	memset(m_buff,0, BUFFSIZE);
-	return TRUE;
+	return 0;
 }
 
-int CtradesysDlg::udprecvfrom()
+CString CtradesysDlg::udprecvfrom()
 {
+	CString t_cstring = _T("");
 	int t_recvlen = 0;
 	if (rxbuffok())
 	{
@@ -147,9 +162,13 @@ int CtradesysDlg::udprecvfrom()
 		memset(m_buff, 0, BUFFSIZE);
 		int t_addrlen = sizeof(SOCKADDR);
 		t_recvlen=recvfrom(m_udpsocket, (char*)m_buff, BUFFSIZE, 0, (SOCKADDR*)&m_socketaddr, &t_addrlen);
+		if (t_recvlen > 0)
+		{
+			t_cstring = chars2cstring(m_buff);
+			memset(m_buff, 0, BUFFSIZE);
+		}
 	}
-	//this->PostThreadMessage(WM_udprx, NULL, NULL);
-	return t_recvlen;
+	return t_cstring;
 }
 
 int CtradesysDlg::rxbuffok()
@@ -194,12 +213,50 @@ void CtradesysDlg::OnBnClickedsysenable()
 			UpdateData(FALSE);
 			closeudpsocket();
 		}
-		udpsendto(m_buff,strlen(m_buff));
-		udprecvfrom();
-		AfxMessageBox(chars2cstring(m_buff));
+		PostMessage(WM_sysenable, 0, 0);
 	}
 	else
 	{
-		closeudpsocket();
+		PostMessage(WM_sysdisable, 0, 0);
 	}
+}
+
+afx_msg LRESULT CtradesysDlg::OnSysenable(WPARAM wParam, LPARAM lParam)
+{
+	//AfxMessageBox(_T("OnSysenable"));
+	CString t_cs = udprecvfrom();
+	if (t_cs.GetLength()>0)
+	{
+
+	}
+	PostMessage(WM_sysenable, 0, 0);
+	return 0;
+}
+
+afx_msg LRESULT CtradesysDlg::OnSysdisable(WPARAM wParam, LPARAM lParam)
+{
+	//AfxMessageBox(_T("OnSysdisable"));
+	closeudpsocket();
+	return 0;
+}
+
+void CtradesysDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+	for (int t_i = 0; t_i<100; t_i++)
+	{
+		m_msglist.InsertItem(t_i, _T("0"));
+		m_msglist.SetItemText(t_i,1,_T("1"));
+		m_msglist.SetItemText(t_i,2,  _T("2"));
+		m_msglist.SetItemText(t_i, 3,_T("3"));
+		m_msglist.SetItemText(1, 1, _T("411111111111111"));
+	}
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	UpdateData(TRUE);
+	CPoint t_opt;
+	GetCursorPos(&t_opt);
+	CString t_cs;
+	t_cs.Format(_T("%d, %d"), t_opt.x, t_opt.y);
+	m_status = t_cs;
+	UpdateData(FALSE);
+	CDialogEx::OnMouseMove(nFlags, point);
 }

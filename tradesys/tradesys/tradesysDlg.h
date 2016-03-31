@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "afxsock.h"
+#include "afxwin.h"
 
 // CtradesysDlg ¶Ô»°¿ò
 class CtradesysDlg : public CDialogEx
@@ -42,7 +43,7 @@ private:
 	int initudpsocket();
 	int closeudpsocket();
 	int udpsendto(char* v_char, int v_len);
-	int udprecvfrom();
+	CString udprecvfrom();
 	int rxbuffok();
 	CString chars2cstring(char v_buff[BUFFSIZE]);
 	int cstring2chars(CString v_cstring);
@@ -50,4 +51,11 @@ private:
 public:
 	afx_msg void OnBnClickedsysenable();
 
+protected:
+	afx_msg LRESULT OnSysenable(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnSysdisable(WPARAM wParam, LPARAM lParam);
+public:
+	CListCtrl m_msglist;
+	CString m_status;
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 };
