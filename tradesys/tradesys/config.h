@@ -8,7 +8,7 @@
 #define LIST1WIDTH	64
 #define LIST2WIDTH	128
 #define LIST3WIDTH	128
-#define LIST4WIDTH	64
+#define LIST4WIDTH	80
 
 #define WM_sysenable	(WM_USER+1)
 #define WM_sysdisable	(WM_USER+2)
