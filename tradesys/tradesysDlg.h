@@ -7,6 +7,7 @@
 #include "config.h"
 #include "afxsock.h"
 #include "afxwin.h"
+#include "../sqlite3_lib/sqlite3.h"
 
 // CtradesysDlg ¶Ô»°¿ò
 class CtradesysDlg : public CDialogEx

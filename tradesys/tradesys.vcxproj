@@ -211,6 +211,11 @@
   <ItemGroup>
     <Image Include="res\tradesys.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\sqlite3_lib\sqlite3_lib.vcxproj">
+      <Project>{1806bf5b-2738-4725-bc0c-a48ae9c17e6f}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

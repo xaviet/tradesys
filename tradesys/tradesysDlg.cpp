@@ -74,6 +74,14 @@ BOOL CtradesysDlg::OnInitDialog()
 	SetTimer(TIMER1S, 1000, NULL);
 	SetTimer(TIMER50MS, 50, NULL);
 
+	sqlite3 *m_db = NULL;
+	CString t_cs = _T("test.sdb");
+	//this->unicode2char(t_cs,t_ch);
+	if (sqlite3_open(CW2A(t_cs, CP_UTF8), &m_db) != SQLITE_OK)
+	{
+		MessageBox(_T("db open error!"));
+	}
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
