@@ -80,6 +80,7 @@ BOOL CtradesysDlg::OnInitDialog()
 	if (sqlite3_open(CW2A(t_cs, CP_UTF8), &m_db) != SQLITE_OK)
 	{
 		MessageBox(_T("db open error!"));
+		return TRUE;
 	}
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
