@@ -62,8 +62,8 @@ BOOL CtradesysDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-	m_ipsaddress = _T("192.168.255.1");
-	m_ipdaddress = _T("192.168.255.128");
+	m_ipsaddress = _T("192.168.137.1");
+	m_ipdaddress = _T("192.168.137.33");
 	UpdateData(FALSE);
 	memset(m_buff, 0, BUFFSIZE);
 	m_msglist.SetExtendedStyle((m_msglist.GetExtendedStyle()) | LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
