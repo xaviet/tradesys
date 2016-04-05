@@ -52,6 +52,7 @@ private:
 	int m_listcount;
 	int msg2list(CString v_cstring);
 	CString m_rxbuff;
+	int m_msglistactiveitem;
 
 public:
 	afx_msg void OnBnClickedsysenable();
@@ -66,4 +67,7 @@ public:
 	CString m_status;
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	CString m_msgcount;
+	afx_msg void OnRclickMsglist(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnMenuoutput();
+	afx_msg void OnMenuinput();
 };

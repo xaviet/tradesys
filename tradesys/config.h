@@ -5,10 +5,12 @@
 #define UDPPORT	32674 //829+727+1118+30000=32674
 #define BUFFSIZE	65535
 
-#define LIST1WIDTH	64
-#define LIST2WIDTH	128
-#define LIST3WIDTH	128
-#define LIST4WIDTH	80
+#define LIST1WIDTH	80
+#define LIST2WIDTH	120
+#define LIST3WIDTH	120
+#define LIST4WIDTH	100
+#define LIST5WIDTH	100
+#define LIST6WIDTH	80
 
 #define WM_sysenable	(WM_USER+1)
 #define WM_sysdisable	(WM_USER+2)

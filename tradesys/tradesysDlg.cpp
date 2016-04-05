@@ -1,4 +1,4 @@
-﻿
+﻿ 
 // tradesysDlg.cpp : 实现文件
 //
 
@@ -22,6 +22,7 @@ CtradesysDlg::CtradesysDlg(CWnd* pParent /*=NULL*/)
 	, m_status(_T(""))
 	, m_listcount(0)
 	, m_msgcount(_T(""))
+	, m_msglistactiveitem(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -48,6 +49,9 @@ BEGIN_MESSAGE_MAP(CtradesysDlg, CDialogEx)
 	ON_MESSAGE(WM_sysenable, &CtradesysDlg::OnSysenable)
 	ON_MESSAGE(WM_sysdisable, &CtradesysDlg::OnSysdisable)
 	ON_WM_MOUSEMOVE()
+	ON_NOTIFY(NM_RCLICK, IDC_msglist, &CtradesysDlg::OnRclickMsglist)
+	ON_COMMAND(ID_MENU_output, &CtradesysDlg::OnMenuoutput)
+	ON_COMMAND(ID_MENU_input, &CtradesysDlg::OnMenuinput)
 END_MESSAGE_MAP()
 
 // CtradesysDlg 消息处理程序
@@ -70,7 +74,9 @@ BOOL CtradesysDlg::OnInitDialog()
 	m_msglist.InsertColumn(1, _T("code"), LVCFMT_LEFT, LIST1WIDTH);
 	m_msglist.InsertColumn(2, _T("value"), LVCFMT_LEFT, LIST2WIDTH);
 	m_msglist.InsertColumn(3, _T("volume"), LVCFMT_LEFT, LIST3WIDTH);
-	m_msglist.InsertColumn(4, _T("status"), LVCFMT_LEFT, LIST4WIDTH);
+	m_msglist.InsertColumn(4, _T("input"), LVCFMT_LEFT, LIST4WIDTH);
+	m_msglist.InsertColumn(5, _T("output"), LVCFMT_LEFT, LIST5WIDTH);
+	m_msglist.InsertColumn(6, _T("status"), LVCFMT_LEFT, LIST6WIDTH);
 	SetTimer(TIMER1S, 1000, NULL);
 	SetTimer(TIMER50MS, 50, NULL);
 
@@ -317,4 +323,49 @@ int CtradesysDlg::infosysrun()
 		PostMessage(WM_sysenable, 0, 0);
 	}
 	return 0;
+}
+
+void CtradesysDlg::OnRclickMsglist(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	// TODO: 在此添加控件通知处理程序代码
+	
+	CMenu t_menu;
+	if (t_menu.m_hMenu == NULL)
+	{
+		POINT t_pt = { 0 };
+		GetCursorPos(&t_pt);
+		t_menu.LoadMenu(IDR_MENU);
+		t_menu.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN, t_pt.x, t_pt.y, this);
+	}
+	m_msglistactiveitem = pNMItemActivate->iItem;
+	*pResult = 0;
+}
+
+
+void CtradesysDlg::OnMenuoutput()
+{
+	// TODO: 在此添加命令处理程序代码
+	CString t_cs = _T("");
+	t_cs.Format(_T("%d"), m_msglistactiveitem);
+	AfxMessageBox(t_cs);
+	if (m_msglistactiveitem>=0)
+	{
+		t_cs=m_msglist.GetItemText(m_msglistactiveitem,0);
+
+	}
+}
+
+
+void CtradesysDlg::OnMenuinput()
+{
+	// TODO: 在此添加命令处理程序代码
+	CString t_cs = _T("");
+	t_cs.Format(_T("%d"), m_msglistactiveitem);
+	AfxMessageBox(t_cs);
+	if (m_msglistactiveitem >= 0)
+	{
+		t_cs = m_msglist.GetItemText(m_msglistactiveitem, 0);
+
+	}
 }
