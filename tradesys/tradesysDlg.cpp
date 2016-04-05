@@ -23,6 +23,10 @@ CtradesysDlg::CtradesysDlg(CWnd* pParent /*=NULL*/)
 	, m_listcount(0)
 	, m_msgcount(_T(""))
 	, m_msglistactiveitem(0)
+	, m_in(_T(""))
+	, m_out(_T(""))
+	, m_dbpath(_T("bv.sdb"))
+	, m_db(NULL)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -39,6 +43,10 @@ void CtradesysDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_status, m_status);
 	DDV_MaxChars(pDX, m_status, 32);
 	DDX_Text(pDX, IDC_msgcount, m_msgcount);
+	DDX_Text(pDX, IDC_input, m_in);
+	DDV_MaxChars(pDX, m_in, 32);
+	DDX_Text(pDX, IDC_output, m_out);
+	DDV_MaxChars(pDX, m_out, 32);
 }
 
 BEGIN_MESSAGE_MAP(CtradesysDlg, CDialogEx)
@@ -52,6 +60,7 @@ BEGIN_MESSAGE_MAP(CtradesysDlg, CDialogEx)
 	ON_NOTIFY(NM_RCLICK, IDC_msglist, &CtradesysDlg::OnRclickMsglist)
 	ON_COMMAND(ID_MENU_output, &CtradesysDlg::OnMenuoutput)
 	ON_COMMAND(ID_MENU_input, &CtradesysDlg::OnMenuinput)
+	ON_NOTIFY(NM_CLICK, IDC_msglist, &CtradesysDlg::OnClickMsglist)
 END_MESSAGE_MAP()
 
 // CtradesysDlg 消息处理程序
@@ -80,10 +89,8 @@ BOOL CtradesysDlg::OnInitDialog()
 	SetTimer(TIMER1S, 1000, NULL);
 	SetTimer(TIMER50MS, 50, NULL);
 
-	sqlite3 *m_db = NULL;
-	CString t_cs = _T("test.sdb");
 	//this->unicode2char(t_cs,t_ch);
-	if (sqlite3_open(CW2A(t_cs, CP_UTF8), &m_db) != SQLITE_OK)
+	if (sqlite3_open(CW2A(m_dbpath, CP_UTF8), &m_db) != SQLITE_OK)
 	{
 		MessageBox(_T("db open error!"));
 		return TRUE;
@@ -268,7 +275,7 @@ int CtradesysDlg::msg2list(CString v_cstring)
 afx_msg LRESULT CtradesysDlg::OnSysenable(WPARAM wParam, LPARAM lParam)
 {
 	// messageformat[code,price,volume,successflag]
-	//udpsendto(_T("[55555,22.333/4444.22,666666,7777777][2,5.1/9.27,6,0][600066,9.07/9.27,200,0]"));
+	udpsendto(_T("[601066,22.333/4444.22,7777777][600166,2,5.1/9.27,6][600066,9.07/9.27,200]"));
 	m_rxbuff = udprecvfrom();
 	if (m_rxbuff.GetLength()>0 && m_rxbuff[m_rxbuff.GetLength()-1]==_T(']'))
 	{
@@ -339,20 +346,43 @@ void CtradesysDlg::OnRclickMsglist(NMHDR *pNMHDR, LRESULT *pResult)
 		t_menu.GetSubMenu(0)->TrackPopupMenu(TPM_LEFTALIGN, t_pt.x, t_pt.y, this);
 	}
 	m_msglistactiveitem = pNMItemActivate->iItem;
+	if (m_msglistactiveitem>=0)
+	{
+		data2view(m_msglist.GetItemText(m_msglistactiveitem, 1));
+	}
 	*pResult = 0;
 }
 
+void CtradesysDlg::data2view(CString v_cs)
+{
+	m_in = v_cs.Left(v_cs.Find(_T("/")));
+	m_out = v_cs.Right(v_cs.GetLength()-v_cs.Find(_T("/"))-1);
+	UpdateData(FALSE);
+}
+
+CString CtradesysDlg::view2in(void)
+{
+	UpdateData(TRUE);
+	CString t_cs = m_in;
+	return t_cs;
+}
+
+CString CtradesysDlg::view2out(void)
+{
+	UpdateData(TRUE);
+	CString t_cs = m_out;
+	return t_cs;
+}
 
 void CtradesysDlg::OnMenuoutput()
 {
 	// TODO: 在此添加命令处理程序代码
 	CString t_cs = _T("");
 	t_cs.Format(_T("%d"), m_msglistactiveitem);
-	AfxMessageBox(t_cs);
 	if (m_msglistactiveitem>=0)
 	{
-		t_cs=m_msglist.GetItemText(m_msglistactiveitem,0);
-
+		t_cs = view2out();
+		m_msglist.SetItemText(m_msglistactiveitem,5, t_cs);
 	}
 }
 
@@ -362,10 +392,22 @@ void CtradesysDlg::OnMenuinput()
 	// TODO: 在此添加命令处理程序代码
 	CString t_cs = _T("");
 	t_cs.Format(_T("%d"), m_msglistactiveitem);
-	AfxMessageBox(t_cs);
 	if (m_msglistactiveitem >= 0)
 	{
-		t_cs = m_msglist.GetItemText(m_msglistactiveitem, 0);
-
+		t_cs = view2in();
+		m_msglist.SetItemText(m_msglistactiveitem, 4, t_cs);
 	}
+}
+
+
+void CtradesysDlg::OnClickMsglist(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	// TODO: 在此添加控件通知处理程序代码
+	m_msglistactiveitem = pNMItemActivate->iItem;
+	if (m_msglistactiveitem >= 0)
+	{
+		data2view(m_msglist.GetItemText(m_msglistactiveitem, 1));
+	}
+	*pResult = 0;
 }

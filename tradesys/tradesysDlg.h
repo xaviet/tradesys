@@ -53,6 +53,9 @@ private:
 	int msg2list(CString v_cstring);
 	CString m_rxbuff;
 	int m_msglistactiveitem;
+	void data2view(CString v_cs);
+	CString view2in(void);
+	CString view2out(void);
 
 public:
 	afx_msg void OnBnClickedsysenable();
@@ -70,4 +73,9 @@ public:
 	afx_msg void OnRclickMsglist(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnMenuoutput();
 	afx_msg void OnMenuinput();
+	CString m_in;
+	CString m_out;
+	CString m_dbpath;
+	sqlite3 *m_db;
+	afx_msg void OnClickMsglist(NMHDR *pNMHDR, LRESULT *pResult);
 };
