@@ -56,6 +56,11 @@ private:
 	void data2view(CString v_cs);
 	CString view2in(void);
 	CString view2out(void);
+	int initsqlite3();
+	CString getdatetime();
+	void updatedb();
+	int status_cstring2int(CString v_cs);
+	CString status_db2view(CString v_cs);
 
 public:
 	afx_msg void OnBnClickedsysenable();
@@ -71,11 +76,15 @@ public:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	CString m_msgcount;
 	afx_msg void OnRclickMsglist(NMHDR *pNMHDR, LRESULT *pResult);
-	afx_msg void OnMenuoutput();
-	afx_msg void OnMenuinput();
 	CString m_in;
 	CString m_out;
 	CString m_dbpath;
 	sqlite3 *m_db;
 	afx_msg void OnClickMsglist(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnMenuIn();
+	afx_msg void OnMenuOut();
+	afx_msg void OnBnClickedbtinput();
+	afx_msg void OnBnClickedbtoutput();
+	CString m_investment;
+	CString m_optok;
 };
