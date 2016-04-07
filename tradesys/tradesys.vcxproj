@@ -191,6 +191,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="tradesys.h" />
     <ClInclude Include="tradesysDlg.h" />
+    <ClInclude Include="winopt.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -201,6 +202,7 @@
     </ClCompile>
     <ClCompile Include="tradesys.cpp" />
     <ClCompile Include="tradesysDlg.cpp" />
+    <ClCompile Include="winopt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="tradesys.rc" />

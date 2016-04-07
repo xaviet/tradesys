@@ -8,6 +8,7 @@
 #include "afxsock.h"
 #include "afxwin.h"
 #include "../sqlite3_lib/sqlite3.h"
+#include "winopt.h"
 
 // CtradesysDlg ¶Ô»°¿ò
 class CtradesysDlg : public CDialogEx
@@ -57,10 +58,14 @@ private:
 	CString view2in(void);
 	CString view2out(void);
 	int initsqlite3();
+	int initwinopt();
 	CString getdatetime();
 	void updatedb();
 	int status_cstring2int(CString v_cs);
 	CString status_db2view(CString v_cs);
+	HACCEL m_hAccTable;
+	BOOL PreTranslateMessage(MSG* pMsg);
+	BOOL OnWndMsg(UINT message, WPARAM wParam, LPARAM lParam, LRESULT* pResult);
 
 public:
 	afx_msg void OnBnClickedsysenable();
@@ -87,4 +92,5 @@ public:
 	afx_msg void OnBnClickedbtoutput();
 	CString m_investment;
 	CString m_optok;
+	CWinThread* m_pwinopt;
 };

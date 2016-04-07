@@ -29,6 +29,7 @@ CtradesysDlg::CtradesysDlg(CWnd* pParent /*=NULL*/)
 	, m_db(NULL)
 	, m_investment(_T(""))
 	, m_optok(_T(""))
+	, m_pwinopt(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -98,6 +99,7 @@ BOOL CtradesysDlg::OnInitDialog()
 	SetTimer(TIMER1S, 1000, NULL);
 	SetTimer(TIMER50MS, 50, NULL);
 
+	initwinopt();
 	initsqlite3();
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -139,17 +141,24 @@ HCURSOR CtradesysDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+int CtradesysDlg::initwinopt()
+{
+	m_pwinopt = AfxBeginThread(RUNTIME_CLASS(cwinopt), THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED, NULL);
+	m_pwinopt->ResumeThread();
+	return 0;
+}
+
 int CtradesysDlg::initsqlite3()
 {
 	if (sqlite3_open(CW2A(m_dbpath, CP_UTF8), &m_db) != SQLITE_OK)
 	{
-		MessageBox(_T("db open error!"));
+		AfxMessageBox(_T("db open error!"));
 		return TRUE;
 	}
 	CString t_cs = _T("create table if not exists opt(datetime integer primary key,code int,volume int,input real,output real,status int);");
 	if (sqlite3_exec(m_db, CW2A(t_cs, CP_UTF8), NULL, NULL, NULL) != SQLITE_OK)
 	{
-		MessageBox(_T("db open error!"));
+		AfxMessageBox(_T("db open error!"));
 	}
 	int t_nrow = 0, t_ncolumn = 0;
 	char **t_dbresult = NULL;
@@ -182,14 +191,14 @@ int CtradesysDlg::initudpsocket()
 {
 	if (!AfxSocketInit())
 	{
-		MessageBox(_T("AfxSocketInit fail"));
+		AfxMessageBox(_T("AfxSocketInit fail"));
 		return FALSE;
 	}
 	// 初始化udp
 	m_udpsocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (INVALID_SOCKET == m_udpsocket)
 	{
-		MessageBox(_T("udp socket fail"));
+		AfxMessageBox(_T("udp socket fail"));
 		return FALSE;
 	}
 	m_socketaddr.sin_family = AF_INET;
@@ -199,7 +208,7 @@ int CtradesysDlg::initudpsocket()
 	inet_pton(AF_INET, m_buff, &(m_socketaddr.sin_addr.s_addr));
 	if (SOCKET_ERROR == bind(m_udpsocket, (SOCKADDR*)&m_socketaddr, sizeof(SOCKADDR)))
 	{
-		MessageBox(_T("udp socket bind fail"));
+		AfxMessageBox(_T("udp socket bind fail"));
 		return FALSE;
 	}
 	// destination ip
@@ -284,10 +293,12 @@ void CtradesysDlg::OnBnClickedsysenable()
 			m_sysenable = FALSE;
 			UpdateData(FALSE);
 		}
+		m_pwinopt->PostThreadMessage(WM_winoptactive, 1, 0);
 	}
 	else
 	{
 		PostMessage(WM_sysdisable, 0, 0);
+		m_pwinopt->PostThreadMessage(WM_winoptactive, 0, 0);
 	}
 }
 
@@ -302,8 +313,11 @@ int CtradesysDlg::msg2list(CString v_cstring)
 		t_tempcs = t_cs.Left(t_cs.Find(_T(',')));
 		m_msglist.SetItemText(0, 1, t_tempcs);
 		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
-		t_tempcs = t_cs.Left(t_cs.Find(_T(']')));
+		t_tempcs = t_cs.Left(t_cs.Find(_T(',')));
 		m_msglist.SetItemText(0, 2, t_tempcs);
+		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
+		t_tempcs = t_cs.Left(t_cs.Find(_T(']')));
+		m_msglist.SetItemText(0, 5, status_db2view(t_tempcs));
 		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
 		m_listcount++;
 	}
@@ -315,7 +329,7 @@ int CtradesysDlg::msg2list(CString v_cstring)
 afx_msg LRESULT CtradesysDlg::OnSysenable(WPARAM wParam, LPARAM lParam)
 {
 	// messageformat[code,price,volume,successflag]
-	udpsendto(_T("[601066,,7777777][600166,5.1/9.27,6][600066,9.07/9.27,200]"));
+	//udpsendto(_T("[601066,,7777777][600166,5.1/9.27,6][600066,9.07/9.27,200]"));
 	m_rxbuff = udprecvfrom();
 	if (m_rxbuff.GetLength()>0 && m_rxbuff[m_rxbuff.GetLength()-1]==_T(']'))
 	{
@@ -327,7 +341,7 @@ afx_msg LRESULT CtradesysDlg::OnSysenable(WPARAM wParam, LPARAM lParam)
 
 afx_msg LRESULT CtradesysDlg::OnSysdisable(WPARAM wParam, LPARAM lParam)
 {
-	//MessageBox(_T("OnSysdisable"));
+	//AfxMessageBox(_T("OnSysdisable"));
 	closeudpsocket();
 	return 0;
 }
@@ -397,12 +411,13 @@ void CtradesysDlg::data2view(CString v_cs)
 	if (v_cs.GetLength()>=3)
 	{
 		m_in = v_cs.Left(v_cs.Find(_T("/")));
+		m_in.Format(_T("%.2f"), _ttof(m_in) - maxeverybuy*0.00001);
 		m_out = v_cs.Right(v_cs.GetLength() - v_cs.Find(_T("/")) - 1);
 	}
 	else
 	{
 		m_in = m_msglist.GetItemText(m_msglistactiveitem, 3);
-		m_out.Format(_T("%.3f"),_ttof(m_in)*WINLIMIT+0.01);
+		m_out.Format(_T("%.2f"),_ttof(m_in)*WINLIMIT+ maxeverybuy*0.00001);
 	}
 	UpdateData(FALSE);
 }
@@ -465,8 +480,8 @@ void CtradesysDlg::OnMenuIn()
 	{
 		m_msglist.SetItemText(m_msglistactiveitem, 5, LISTINOK);
 		updatedb();
-		int t_i = _ttoi(m_investment) - _ttoi(m_msglist.GetItemText(m_msglistactiveitem, 2))*_ttoi(m_msglist.GetItemText(m_msglistactiveitem, 3));
-		m_investment.Format(_T("%d"), t_i);
+		double t_d = _ttof(m_investment) - _ttof(m_msglist.GetItemText(m_msglistactiveitem, 2))*_ttof(m_msglist.GetItemText(m_msglistactiveitem, 3));
+		m_investment.Format(_T("%f"), t_d);
 		UpdateData(FALSE);
 	}
 }
@@ -479,9 +494,9 @@ void CtradesysDlg::OnMenuOut()
 	{
 		m_msglist.SetItemText(m_msglistactiveitem, 5, LISTOUTOK);
 		updatedb();
-		int t_i = _ttoi(m_investment) + _ttoi(m_msglist.GetItemText(m_msglistactiveitem, 2))*_ttoi(m_msglist.GetItemText(m_msglistactiveitem, 4));
-		m_investment.Format(_T("%d"), t_i);
-		t_i = _ttoi(m_optok) + 1;
+		double t_d = _ttof(m_investment) + _ttof(m_msglist.GetItemText(m_msglistactiveitem, 2))*_ttof(m_msglist.GetItemText(m_msglistactiveitem, 4));
+		m_investment.Format(_T("%f"), t_d);
+		int t_i = _ttoi(m_optok) + 1;
 		m_optok.Format(_T("%d"), t_i);
 		UpdateData(FALSE);
 	}
@@ -517,7 +532,7 @@ int CtradesysDlg::status_cstring2int(CString v_cs)
 	}
 	else
 	{
-		MessageBox(_T("status_cstring2int error!"));
+		AfxMessageBox(_T("status_cstring2int error!"));
 	}
 	return t_rt;
 }
@@ -543,9 +558,34 @@ CString CtradesysDlg::status_db2view(CString v_cs)
 	}
 	else
 	{
-		MessageBox(_T("status_db2view error!"));
+		AfxMessageBox(_T("status_db2view error!"));
 	}
 	return t_rt;
+}
+
+BOOL CtradesysDlg::PreTranslateMessage(MSG* pMsg)
+{
+	if (m_hAccTable)
+	{
+		if (::TranslateAccelerator(m_hWnd, m_hAccTable, pMsg))
+		{
+			return true;
+		}
+	}
+	// 把Esc和Enter按键事件消息过滤掉，否则该消息会导致对应应用程序调用OnOK（）方法，结束应用程序  
+	if (pMsg->message == WM_KEYDOWN)
+	{
+		switch (pMsg->wParam)
+		{
+		case VK_ESCAPE: //Esc按键事件  
+			return true;
+		case VK_RETURN: //Enter按键事件  
+			return true;
+		default:
+			break;
+		}
+	}
+	return CDialogEx::PreTranslateMessage(pMsg);
 }
 
 void CtradesysDlg::updatedb()
@@ -566,7 +606,20 @@ void CtradesysDlg::updatedb()
 		status_cstring2int(m_msglist.GetItemText(m_msglistactiveitem, 5)));
 	if (sqlite3_exec(m_db, CW2A(t_cs, CP_UTF8), NULL, NULL, NULL) != SQLITE_OK)
 	{
-		MessageBox(_T("replace db error!"));
+		AfxMessageBox(_T("replace db error!"));
 	}
 	m_msglist.SetItemText(m_msglistactiveitem, 6, t_datetime);
+}
+
+BOOL CtradesysDlg::OnWndMsg(UINT message, WPARAM wParam, LPARAM lParam, LRESULT* pResult)
+{
+	if (message == WM_CLOSE)
+	{
+		AfxMessageBox(_T("CtradesysDlg WM_CLOSE!"));
+		if (m_pwinopt != NULL)
+		{
+			m_pwinopt = NULL;
+		}
+	}
+	return CDialogEx::OnWndMsg(message, wParam, lParam, pResult);
 }
