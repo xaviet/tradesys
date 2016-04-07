@@ -14,9 +14,7 @@ cwinopt::cwinopt()
 {
 	for (int t_i = 0; t_i<optitemnum; t_i++)
 	{
-		m_optitem[t_i].code= 0;
-		m_optitem[t_i].price = 0;
-		m_optitem[t_i].opt = 0;
+		clearoptitem(t_i);
 	}
 }
 
@@ -35,6 +33,29 @@ int cwinopt::ExitInstance()
 {
 	// TODO:    在此执行任意逐线程清理
 	return CWinThread::ExitInstance();
+}
+
+int cwinopt::clearoptitem(int v_i)
+{
+	m_optitem[v_i].code = 0;
+	m_optitem[v_i].price = 0;
+	m_optitem[v_i].opt = 0;
+	return 0;
+}
+
+int cwinopt::appendoptitem(struct optitem* v_optitem)
+{
+	for (int t_i = 0; t_i < optitemnum;t_i++)
+	{
+		if (m_optitem[t_i].code == 0)
+		{
+			m_optitem[t_i].code = v_optitem->code;
+			m_optitem[t_i].price = v_optitem->price;
+			m_optitem[t_i].opt = v_optitem->opt;
+			free(v_optitem);
+		}
+	}
+	return 0;
 }
 
 BEGIN_MESSAGE_MAP(cwinopt, CWinThread)
@@ -71,6 +92,9 @@ int cwinopt::Run()
 				winoptrun();
 			}
 			PostThreadMessage(WM_winoptrun, 0, 0);
+			break;
+		case WM_appendoptitem:
+			appendoptitem((struct optitem*)t_msg.wParam);
 			break;
 		default:
 			break;

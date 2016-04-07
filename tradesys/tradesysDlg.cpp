@@ -82,8 +82,8 @@ BOOL CtradesysDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO: 在此添加额外的初始化代码
-	m_ipsaddress = _T("192.168.137.1");
-	m_ipdaddress = _T("192.168.137.33");
+	m_ipsaddress = saddress;
+	m_ipdaddress = daddress;
 	m_investment = puteveryday;
 	m_optok = _T("0");
 	UpdateData(FALSE);
@@ -172,18 +172,16 @@ int CtradesysDlg::initsqlite3()
 		{
 			CString t_code=CA2W(t_dbresult[(t_i)*t_ncolumn + 1]);
 			t_code.Format(_T("%06d"),_ttoi(t_code));
-			m_msglist.InsertItem(0, t_code, CP_UTF8);
-			m_msglist.SetItemText(0, 2, CA2W(t_dbresult[(t_i)*t_ncolumn + 2], CP_UTF8));
-			m_msglist.SetItemText(0, 3, CA2W(t_dbresult[(t_i)*t_ncolumn + 3], CP_UTF8));
-			m_msglist.SetItemText(0, 4, CA2W(t_dbresult[(t_i)*t_ncolumn + 4], CP_UTF8));	
-			m_msglist.SetItemText(0, 5, t_cs);
-			m_msglist.SetItemText(0, 6, CA2W(t_dbresult[(t_i)*t_ncolumn], CP_UTF8));
-			m_listcount++;
+			CString t_value = _T("");
+			CString t_volume = CA2W(t_dbresult[(t_i)*t_ncolumn + 2], CP_UTF8);
+			CString t_input = CA2W(t_dbresult[(t_i)*t_ncolumn + 3], CP_UTF8);
+			CString t_output = CA2W(t_dbresult[(t_i)*t_ncolumn + 4], CP_UTF8);
+			CString t_status =  t_cs;
+			CString t_datetime = CA2W(t_dbresult[(t_i)*t_ncolumn], CP_UTF8);			
+			data2msglist(t_code, t_value, t_volume, t_input, t_output, t_status, t_datetime);
 		}
 	}
 	sqlite3_free_table(t_dbresult);
-	m_msgcount.Format(_T("%d"), m_listcount);
-	UpdateData(FALSE);
 	return 0;
 }
 
@@ -270,6 +268,40 @@ int CtradesysDlg::rxbuffok()
 	return t_iRet;
 }
 
+int CtradesysDlg::data2msglist(CString v_code, CString v_value, CString v_volume, \
+	CString v_input, CString v_output, CString v_status, CString v_datetime)
+{
+	m_msglist.InsertItem(0, v_code);
+	m_msglist.SetItemText(0, 1, v_value);
+	m_msglist.SetItemText(0, 2, v_volume);
+	m_msglist.SetItemText(0, 3, v_input);
+	m_msglist.SetItemText(0, 4, v_output);
+	m_msglist.SetItemText(0, 5, v_status);
+	m_msglist.SetItemText(0, 6, v_datetime);
+	m_listcount++;
+	m_msgcount.Format(_T("%d"), m_listcount);	
+	if (v_status== LISTRDY)
+	{
+		struct optitem* t_optitem = new optitem;
+		t_optitem->code = _ttoi(v_code);
+		if (v_input.GetLength()>0)
+		{
+			t_optitem->price = _ttof(v_input);
+		}
+		else
+		{
+			CString t_in = v_value.Left(v_value.Find(_T("/")));
+			t_in.Format(_T("%.2f"), _ttof(t_in) - maxeverybuy*0.00001);
+			t_optitem->price = _ttof(t_in);
+		}
+		t_optitem->opt = 0;
+		m_pwinopt->PostThreadMessage(WM_appendoptitem, (WPARAM)t_optitem, 0);
+		m_msglist.SetItemText(0, 5, LISTINWT);
+	}
+	UpdateData(FALSE);
+	return 0;
+}
+
 CString CtradesysDlg::chars2cstring(char v_buff[BUFFSIZE])
 {
 	return CString(v_buff);
@@ -308,28 +340,31 @@ int CtradesysDlg::msg2list(CString v_cstring)
 	while (t_cs.GetLength()>0)
 	{
 		CString t_tempcs = t_cs.Left(t_cs.Find(_T(',')));
-		m_msglist.InsertItem(0, t_tempcs.Right(t_tempcs.GetLength()-1));
+		CString t_code = t_tempcs.Right(t_tempcs.GetLength() - 1);	
 		t_cs = t_cs.Right(t_cs.GetLength()- t_tempcs.GetLength() -1);
 		t_tempcs = t_cs.Left(t_cs.Find(_T(',')));
-		m_msglist.SetItemText(0, 1, t_tempcs);
+		CString t_value = t_tempcs;
 		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
 		t_tempcs = t_cs.Left(t_cs.Find(_T(',')));
-		m_msglist.SetItemText(0, 2, t_tempcs);
+		CString t_volume = t_tempcs;
+		CString t_input = _T("");
+		CString t_output = _T("");
 		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
 		t_tempcs = t_cs.Left(t_cs.Find(_T(']')));
-		m_msglist.SetItemText(0, 5, status_db2view(t_tempcs));
+		CString t_status = status_db2view(t_tempcs);
+		CString t_datetime = _T("");
 		t_cs = t_cs.Right(t_cs.GetLength() - t_tempcs.GetLength() - 1);
-		m_listcount++;
+		data2msglist(t_code, t_value, t_volume, t_input, t_output, t_status, t_datetime);
 	}
-	m_msgcount.Format(_T("%d"), m_listcount);
-	UpdateData(FALSE);
 	return 0;
 }
 
 afx_msg LRESULT CtradesysDlg::OnSysenable(WPARAM wParam, LPARAM lParam)
 {
 	// messageformat[code,price,volume,successflag]
-	//udpsendto(_T("[601066,,7777777][600166,5.1/9.27,6][600066,9.07/9.27,200]"));
+#ifdef msgloop	
+	udpsendto(msgcontent);
+#endif
 	m_rxbuff = udprecvfrom();
 	if (m_rxbuff.GetLength()>0 && m_rxbuff[m_rxbuff.GetLength()-1]==_T(']'))
 	{
@@ -513,8 +548,12 @@ CString CtradesysDlg::getdatetime()
 
 int CtradesysDlg::status_cstring2int(CString v_cs)
 {
-	int t_rt = 0;
-	if (v_cs== LISTINWT)
+	int t_rt = -1;
+	if (v_cs == LISTRDY)
+	{
+		t_rt = 0;
+	}
+	else if (v_cs== LISTINWT)
 	{
 		t_rt = 1;
 	}
@@ -540,7 +579,11 @@ int CtradesysDlg::status_cstring2int(CString v_cs)
 CString CtradesysDlg::status_db2view(CString v_cs)
 {
 	CString t_rt = _T("");
-	if (v_cs == _T("1"))
+	if (v_cs == _T("0"))
+	{
+		t_rt = LISTRDY;
+	}
+	else if (v_cs == _T("1"))
 	{
 		t_rt = LISTINWT;
 	}

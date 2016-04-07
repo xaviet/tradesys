@@ -66,6 +66,8 @@ private:
 	HACCEL m_hAccTable;
 	BOOL PreTranslateMessage(MSG* pMsg);
 	BOOL OnWndMsg(UINT message, WPARAM wParam, LPARAM lParam, LRESULT* pResult);
+	int data2msglist(CString v_code, CString v_value, CString v_volume, \
+		CString v_input, CString v_output, CString v_status, CString v_datetime);
 
 public:
 	afx_msg void OnBnClickedsysenable();

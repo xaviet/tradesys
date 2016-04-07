@@ -25,6 +25,8 @@ private:
 	int winoptactive(WPARAM v_i);
 	int winoptrun();
 	struct optitem m_optitem[optitemnum];
+	int clearoptitem(int v_i);
+	int appendoptitem(struct optitem* v_optitem);
 };
 
 
