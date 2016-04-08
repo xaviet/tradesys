@@ -606,6 +606,13 @@ CString CtradesysDlg::status_db2view(CString v_cs)
 	return t_rt;
 }
 
+int CtradesysDlg::gotest()
+{
+	//AfxMessageBox(_T("gotest"));
+	m_pwinopt->PostThreadMessageW(WM_winoptgotest,0,0);
+	return 0;
+}
+
 BOOL CtradesysDlg::PreTranslateMessage(MSG* pMsg)
 {
 	if (m_hAccTable)
@@ -620,7 +627,8 @@ BOOL CtradesysDlg::PreTranslateMessage(MSG* pMsg)
 	{
 		switch (pMsg->wParam)
 		{
-		case VK_ESCAPE: //Esc按键事件  
+		case VK_ESCAPE: //Esc按键事件
+			gotest();
 			return true;
 		case VK_RETURN: //Enter按键事件  
 			return true;

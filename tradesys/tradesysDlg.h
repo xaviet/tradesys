@@ -95,4 +95,5 @@ public:
 	CString m_investment;
 	CString m_optok;
 	CWinThread* m_pwinopt;
+	int gotest();
 };

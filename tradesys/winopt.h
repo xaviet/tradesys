@@ -27,6 +27,12 @@ private:
 	struct optitem m_optitem[optitemnum];
 	int clearoptitem(int v_i);
 	int appendoptitem(struct optitem* v_optitem);
+	int notinoptitem(struct optitem* v_optitem);
+	int optact(struct optact v_optact);
+	int actkeyboard(int v_key, int v_act);
+	int optactkeyboard(struct optact v_optact);
+	int actmouse(int v_act);
+	int optactmouse(struct optact v_optact);
 };
 
 
