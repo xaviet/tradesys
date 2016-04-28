@@ -295,7 +295,7 @@ int CtradesysDlg::data2msglist(CString v_code, CString v_value, CString v_volume
 			t_optitem->price = _ttof(t_in);
 		}
 		t_optitem->opt = 0;
-		m_pwinopt->PostThreadMessage(WM_appendoptitem, (WPARAM)t_optitem, 0);
+		m_pwinopt->PostThreadMessage(WM_winoptappendoptitem, (WPARAM)t_optitem, 0);
 		m_msglist.SetItemText(0, 5, LISTINWT);
 	}
 	UpdateData(FALSE);
