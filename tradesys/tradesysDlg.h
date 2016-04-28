@@ -68,6 +68,7 @@ private:
 	BOOL OnWndMsg(UINT message, WPARAM wParam, LPARAM lParam, LRESULT* pResult);
 	int data2msglist(CString v_code, CString v_value, CString v_volume, \
 		CString v_input, CString v_output, CString v_status, CString v_datetime);
+  afx_msg void OnTimer(UINT_PTR nIDEvent);
 
 public:
 	afx_msg void OnBnClickedsysenable();
@@ -75,7 +76,6 @@ public:
 protected:
 	afx_msg LRESULT OnSysenable(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnSysdisable(WPARAM wParam, LPARAM lParam);
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
 public:
 	CListCtrl m_msglist;
